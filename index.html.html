@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Monserrat, te amo ♥</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg1:#1a0b2e;--bg2:#4a1942;--tx:#ffe4ef}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html,body{height:100%;margin:0;overflow:hidden;background:#1a0b2e;font-family:Georgia,'Times New Roman',serif;color:var(--tx)}
+body{background:linear-gradient(180deg,var(--bg1),var(--bg2) 70%,#7a2a5a)}
+canvas{position:fixed;inset:0;width:100%;height:100%;touch-action:manipulation}
+.t{position:fixed;left:0;right:0;text-align:center;pointer-events:none;opacity:0;transition:opacity 2s}
+.t.on{opacity:1}
+#a{top:calc(env(safe-area-inset-top,0px) + 5%);font-size:clamp(28px,8vw,52px);text-shadow:0 0 18px #ff4d8d}
+#b{bottom:calc(env(safe-area-inset-bottom,0px) + 4%);font-size:clamp(15px,4.2vw,22px);padding:0 24px;font-style:italic;text-shadow:0 0 10px #ff4d8d}
+
+#env{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 13%);transform:translateX(-50%);width:84px;height:58px;background:#ff7eb3;border-radius:6px;cursor:pointer;border:0;padding:0;box-shadow:0 0 22px #ff4d8d;animation:bob 1.6s ease-in-out infinite;opacity:0;transition:opacity 1.5s}
+#env.on{opacity:1}
+#env:before{content:"";position:absolute;left:0;top:0;border-left:42px solid transparent;border-right:42px solid transparent;border-top:34px solid #ff4d8d;border-radius:6px 6px 0 0}
+#env span{position:absolute;left:50%;top:14px;transform:translateX(-50%);font-size:20px;z-index:2}
+@keyframes bob{50%{transform:translateX(-50%) translateY(-8px)}}
+#ov{position:fixed;inset:0;background:rgba(20,5,25,.75);display:none;align-items:center;justify-content:center;padding:24px;z-index:5}
+#ov.on{display:flex}
+#paper{background:#fff8f0;color:#7a2a4a;max-width:320px;width:100%;padding:36px 24px;border-radius:8px;text-align:center;box-shadow:0 0 40px #ff4d8d;animation:pop .7s ease-out;font-size:clamp(20px,5.5vw,26px);line-height:1.6;font-style:italic}
+#paper small{display:block;font-size:14px;opacity:.7;margin-top:18px}
+@keyframes pop{from{transform:translateY(80px) scale(.3) rotate(-8deg);opacity:0}}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="t" id="a"></div>
+<div class="t" id="b">Toca la pantalla y llénala de corazones ♥</div>
+<button id="env" aria-label="Abrir carta"><span>♥</span></button>
+<div id="ov"><div id="paper">Para ti, Monserrat ♥<br><br>Te ama tu novio,<br><b>Gibran</b> ❤<small>(toca para cerrar)</small></div></div>
+<script>
+const c=document.getElementById('c'),x=c.getContext('2d');
+const q='Monserrat';
+document.getElementById('a').textContent=(q?q+', ':'')+'te amo ♥';
+let W,H,D,br,t0,seed;
+const rnd=()=>{seed=(seed*16807)%2147483647;return(seed-1)/2147483646};
+const heart=new Path2D();
+heart.moveTo(0,.35);heart.bezierCurveTo(-1.2,-.3,-.6,-1.1,0,-.55);heart.bezierCurveTo(.6,-1.1,1.2,-.3,0,.35);
+const cols=['#ff4d8d','#ff7eb3','#ff2e63','#ffb3d1','#e91e63','#ff9ebb'];
+function gen(px,py,ang,len,w,d){
+ if(d>8)return;
+ const x2=px+Math.cos(ang)*len,y2=py+Math.sin(ang)*len;
+ br.push({x:px,y:py,x2,y2,w,d});
+ if(d>=5){for(let i=0;i<(d==8?3:1);i++)leaves.push({x:x2+(rnd()-.5)*30,y:y2+(rnd()-.5)*30,s:(8+rnd()*9)*Math.min(W,H)/450,c:cols[rnd()*6|0],at:4+d*.5+rnd()*3,r:(rnd()-.5)*.8})}
+ const a=.3+rnd()*.35;
+ gen(x2,y2,ang-a,len*(.74+rnd()*.08),w*.72,d+1);
+ gen(x2,y2,ang+a,len*(.74+rnd()*.08),w*.72,d+1);
+}
+let leaves=[],fall=[],words=[];
+function init(){
+ D=devicePixelRatio||1;W=innerWidth;H=innerHeight;
+ c.width=W*D;c.height=H*D;x.setTransform(D,0,0,D,0,0);
+ seed=1234;br=[];leaves=[];
+ gen(W/2,H*.88,-Math.PI/2,Math.min(H*.2,W*.35),Math.min(W*.025,14),0);
+ t0=performance.now();
+}
+addEventListener('resize',init);
+const stars=Array.from({length:70},()=>({x:Math.random(),y:Math.random()*.7,p:Math.random()*6}));
+function burst(px,py){
+ for(let i=0;i<14;i++){const a=Math.random()*6.28,v=1+Math.random()*3;
+ fall.push({x:px,y:py,vx:Math.cos(a)*v,vy:Math.sin(a)*v-2,s:6+Math.random()*12,c:cols[Math.random()*6|0],l:1,g:.05})}
+ words.push({x:px,y:py,t:['te amo','love','mi vida','♥','forever'][Math.random()*5|0],l:1});
+}
+c.addEventListener('pointerdown',e=>burst(e.clientX,e.clientY));
+let lastSpawn=0;
+const ease=p=>1-Math.pow(1-p,3);
+function frame(now){
+ const t=(now-t0)/1000;
+ x.clearRect(0,0,W,H);
+ for(const s of stars){x.globalAlpha=.4+.6*Math.abs(Math.sin(t*1.2+s.p));x.fillStyle='#fff';x.fillRect(s.x*W,s.y*H,2,2)}
+ x.globalAlpha=1;
+ // ground glow
+ const g=x.createRadialGradient(W/2,H*.9,0,W/2,H*.9,W*.5);g.addColorStop(0,'rgba(255,77,141,.35)');g.addColorStop(1,'transparent');
+ x.fillStyle=g;x.fillRect(0,H*.7,W,H*.3);
+ // branches
+ x.lineCap='round';x.strokeStyle='#4a2c2a';
+ for(const b of br){
+  const p=Math.max(0,Math.min(1,(t-b.d*.5)/.6));if(!p)continue;
+  x.lineWidth=Math.max(1,b.w);x.beginPath();x.moveTo(b.x,b.y);
+  x.lineTo(b.x+(b.x2-b.x)*p,b.y+(b.y2-b.y)*p);x.stroke();
+ }
+ // leaves
+ const sway=Math.sin(t*1.3)*.05;
+ for(const l of leaves){
+  const p=Math.max(0,Math.min(1,(t-l.at)/1.2));if(!p)continue;
+  const pulse=1+.08*Math.sin(t*2.5+l.x);
+  x.save();x.translate(l.x,l.y);x.rotate(l.r+sway);x.scale(l.s*ease(p)*pulse,l.s*ease(p)*pulse);
+  x.fillStyle=l.c;x.fill(heart);x.restore();
+ }
+ // text
+ if(t>1)document.getElementById('a').classList.add('on');
+ if(t>9)document.getElementById('b').classList.add('on');
+ // spawn falling hearts & words
+ if(t>6&&now-lastSpawn>180){
+  lastSpawn=now;const l=leaves[Math.random()*leaves.length|0];
+  if(l)fall.push({x:l.x,y:l.y,vx:(Math.random()-.5)*.6,vy:.3,s:l.s*.8,c:l.c,l:1,g:.004,ph:Math.random()*6});
+  if(Math.random()<.18)words.push({x:Math.random()*W,y:H+10,t:['love','te amo','♥','mi amor','siempre tú','❤'][Math.random()*6|0],l:1,up:1});
+ }
+ for(let i=fall.length-1;i>=0;i--){
+  const f=fall[i];f.vy+=f.g;f.x+=f.vx+(f.ph!==undefined?Math.sin(t*2+f.ph)*.6:0);f.y+=f.vy;
+  if(f.g>.01)f.l-=.012;
+  if(f.y>H*.92){f.l-=.03}
+  if(f.l<=0){fall.splice(i,1);continue}
+  x.globalAlpha=f.l;x.save();x.translate(f.x,f.y);x.rotate(Math.sin(f.y/40)*.5);x.scale(f.s,f.s);x.fillStyle=f.c;x.fill(heart);x.restore();
+ }
+ x.textAlign='center';x.fillStyle='#ffd1e3';x.shadowColor='#ff4d8d';x.shadowBlur=10;
+ for(let i=words.length-1;i>=0;i--){
+  const w=words[i];w.y-=w.up?1.1:.8;w.l-=w.up?.003:.01;
+  if(w.l<=0){words.splice(i,1);continue}
+  x.globalAlpha=w.l;x.font='italic '+(w.up?22:18)+'px Georgia,serif';x.fillText(w.t,w.x+(w.up?Math.sin(w.y/30)*12:0),w.y);
+ }
+ x.shadowBlur=0;x.globalAlpha=1;
+ requestAnimationFrame(frame);
+}
+const env=document.getElementById('env'),ov=document.getElementById('ov');
+setTimeout(()=>env.classList.add('on'),3000);
+env.onclick=()=>{ov.classList.add('on');for(let i=0;i<25;i++)burst(Math.random()*W,H*.6)};
+ov.onclick=()=>ov.classList.remove('on');
+init();requestAnimationFrame(frame);
+</script>
+</body>
+</html>
